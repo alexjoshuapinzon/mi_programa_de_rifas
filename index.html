@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>Mi Rifa · Gestor PWA</title>
+  <link rel="manifest" href="#">
+  <meta name="theme-color" content="#121212">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      background-color: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+    .app-container {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      background-image: var(--bg-image);
+      background-size: cover;
+      background-position: center;
+      border-radius: 36px 36px 28px 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .overlay-dark {
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      color: white;
+      padding: 20px 18px;
+    }
+    .rifa-header {
+      background: rgba(30, 30, 40, 0.6);
+      backdrop-filter: blur(8px);
+      padding: 18px 16px;
+      border-radius: 28px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,215,0,0.3);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+    .rifa-titulo {
+      font-size: 1.9rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      color: #fff;
+      text-shadow: 2px 2px 0 #00000050;
+    }
+    .rifa-desc {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-top: 10px;
+      color: #e0e0e0;
+      font-weight: 500;
+      gap: 8px;
+    }
+    .badge-precio, .badge-fecha {
+      background: #ffd966d0;
+      color: #000;
+      padding: 6px 16px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      backdrop-filter: blur(4px);
+      border: 1px solid gold;
+    }
+    .badge-precio i, .badge-fecha i {
+      margin-right: 6px;
+    }
+    .contador-vendidos {
+      background: #1e2a3a;
+      border-radius: 60px;
+      padding: 12px 20px;
+      margin: 8px 0 18px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #3f5e7a;
+      box-shadow: inset 0 0 8px #00000055;
+      font-weight: bold;
+    }
+    .contador-numero {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: gold;
+      line-height: 1;
+    }
+    .contador-label {
+      font-size: 1rem;
+      text-transform: uppercase;
+      color: #bcd5ff;
+    }
+    .numeros-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 10px;
+      margin: 15px 0 20px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 5px 5px 10px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 32px;
+    }
+    .numero-item {
+      background: rgba(20, 30, 35, 0.8);
+      backdrop-filter: blur(3px);
+      border-radius: 18px;
+      padding: 14px 5px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+      border: 2px solid;
+      transition: 0.2s;
+      cursor: default;
+      color: white;
+    }
+    .numero-item.disponible {
+      border-color: #2ecc71;
+      background: #2ecc7120;
+      color: #d0ffe0;
+    }
+    .numero-item.vendido {
+      border-color: #e74c3c;
+      background: #e74c3c30;
+      color: #ffc4c4;
+    }
+    body.admin-active .numero-item.disponible {
+      cursor: pointer;
+      box-shadow: 0 0 0 2px gold;
+    }
+    body.admin-active .numero-item.vendido {
+      cursor: pointer;
+      box-shadow: 0 0 0 2px #e74c3c;
+    }
+    .admin-panel {
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 28px;
+      padding: 16px;
+      margin: 15px 0;
+      border: 2px solid gold;
+    }
+    .admin-panel h3 {
+      color: gold;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .venta-item {
+      background: #1e2a3a;
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border: 1px solid #3f5e7a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .venta-info {
+      flex: 1;
+    }
+    .venta-numero {
+      font-weight: 800;
+      color: gold;
+      font-size: 1.2rem;
+      margin-right: 10px;
+    }
+    .venta-detalle {
+      font-size: 0.9rem;
+      color: #ddd;
+    }
+    .venta-detalle i {
+      margin-right: 5px;
+      color: gold;
+    }
+    .btn-eliminar {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 8px 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: 0.2s;
+    }
+    .btn-eliminar:hover {
+      background: #c0392b;
+    }
+    .btn-editar {
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 8px 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-right: 8px;
+    }
+    .venta-acciones {
+      display: flex;
+      gap: 5px;
+    }
+    .modal-vender, .modal-editar {
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(12px);
+      border: 2px solid gold;
+      border-radius: 36px;
+      padding: 22px;
+      margin: 10px 0;
+      color: white;
+      position: relative;
+      z-index: 100;
+    }
+    .modal-vender input, .modal-vender select, .modal-vender textarea,
+    .modal-editar input, .modal-editar textarea {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      border-radius: 40px;
+      border: none;
+      background: #2d2d3a;
+      color: white;
+      font-size: 1rem;
+      padding-left: 20px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .btn {
+      background: gold;
+      border: none;
+      padding: 14px 20px;
+      border-radius: 40px;
+      font-weight: 800;
+      flex: 1;
+      color: black;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .btn-outline {
+      background: transparent;
+      border: 2px solid gold;
+      color: gold;
+      cursor: pointer;
+    }
+    .btn-flotante-share {
+      position: sticky;
+      bottom: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin: 15px 0 5px;
+    }
+    .btn-share-main {
+      background: #25d366;
+      border: none;
+      border-radius: 60px;
+      padding: 16px 28px;
+      font-weight: 800;
+      font-size: 1.2rem;
+      box-shadow: 0 10px 25px #25d36680;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #111;
+      border: 2px solid gold;
+      cursor: pointer;
+    }
+    .sub-opciones {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .sub-opciones button {
+      flex: 1;
+      background: #2c3e50;
+      border: none;
+      border-radius: 50px;
+      padding: 12px;
+      color: white;
+      font-weight: 600;
+      border: 1px solid gold;
+      cursor: pointer;
+      min-width: 120px;
+    }
+    .pin-modal {
+      background: #000000bb;
+      backdrop-filter: blur(10px);
+      border-radius: 40px;
+      padding: 25px;
+      margin-bottom: 15px;
+    }
+    .text-small {
+      font-size: 0.8rem;
+      color: #ccc;
+    }
+    hr {
+      border: 1px solid #ffffff30;
+      margin: 15px 0;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+    .badge-admin {
+      background: #e74c3c;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      margin-left: 10px;
+    }
+    #capturaCanvas {
+      display: none;
+    }
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .loading-overlay.active {
+      display: flex;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid gold;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+<div class="app-container" id="appContainer">
+  <div class="overlay-dark" id="mainOverlay"></div>
+</div>
+
+<canvas id="capturaCanvas" width="1000" height="1600"></canvas>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div style="color: white; font-size: 1.2rem;">Generando imagen...</div>
+</div>
+
+<script>
+  (function() {
+    // Configuración de la rifa - CORREGIDA
+    const CONFIG = {
+      totalNumbers: 100,
+      titulo: "Corneta de 40000 watts",
+      descripcionCorta: "Potente corneta profesional",
+      precio: "5$ por número",
+      fechaLimite: "la rifa jugara al ser vendidos todos los numeros",
+      adminPassword: "1234",
+      // URL CORREGIDA - tenía "unplash" y ahora es "unsplash"
+      bgImage: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2069&auto=format&fit=crop"
+    };
+
+    // Estado de la aplicación
+    let numeros = [];
+    let adminMode = false;
+
+    // Cargar datos guardados
+    function loadFromStorage() {
+      const stored = localStorage.getItem('rifa_vendidos');
+      if (stored) {
+        try {
+          numeros = JSON.parse(stored);
+          if (!Array.isArray(numeros)) numeros = [];
+        } catch (e) { 
+          numeros = []; 
+        }
+      } else {
+        numeros = [];
+      }
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('rifa_vendidos', JSON.stringify(numeros));
+    }
+
+    loadFromStorage();
+
+    // Funciones auxiliares
+    function isVendido(num) {
+      return numeros.some(item => item.numero === num);
+    }
+
+    function getVendidosCount() {
+      return numeros.length;
+    }
+
+    function getVentaByNumero(num) {
+      return numeros.find(item => item.numero === num);
+    }
+
+    function eliminarVenta(numero) {
+      if (confirm(`¿Estás seguro de eliminar la venta del número ${numero}?`)) {
+        numeros = numeros.filter(item => item.numero !== numero);
+        saveToStorage();
+        renderUI();
+      }
+    }
+
+    function editarVenta(numero, nuevosDatos) {
+      const index = numeros.findIndex(item => item.numero === numero);
+      if (index !== -1) {
+        numeros[index] = { ...numeros[index], ...nuevosDatos };
+        saveToStorage();
+        renderUI();
+      }
+    }
+
+    // Función para dibujar rectángulos redondeados
+    function roundRect(ctx, x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Función para generar imagen del estado de la rifa
+    async function generarImagenRifa() {
+      const canvas = document.getElementById('capturaCanvas');
+      const ctx = canvas.getContext('2d');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      
+      loadingOverlay.classList.add('active');
+
+      try {
+        // Configurar canvas para 100 números
+        canvas.width = 1000;
+        canvas.height = 1600;
+
+        // Fondo oscuro
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Título
+        ctx.fillStyle = 'gold';
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('🔊 ' + CONFIG.titulo, canvas.width/2, 70);
+
+        // Precio
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = '28px Arial';
+        ctx.fillText(CONFIG.precio, canvas.width/2, 130);
+        
+        // Fecha
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillText('📅 ' + CONFIG.fechaLimite, canvas.width/2, 180);
+
+        // Contador
+        const vendidos = getVendidosCount();
+        const disponibles = CONFIG.totalNumbers - vendidos;
+        
+        ctx.fillStyle = '#3498db';
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText(`📊 ${vendidos} VENDIDOS · ${disponibles} DISPONIBLES`, canvas.width/2, 250);
+
+        // Línea separadora
+        ctx.strokeStyle = 'gold';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(100, 280);
+        ctx.lineTo(900, 280);
+        ctx.stroke();
+
+        // Cuadrícula de números (10x10 para 100 números)
+        const startY = 320;
+        const boxSize = 65;
+        const margin = 8;
+        const cols = 10;
+        const startX = (canvas.width - (cols * (boxSize + margin))) / 2;
+
+        // Dibujar números
+        for (let i = 1; i <= CONFIG.totalNumbers; i++) {
+          const row = Math.floor((i - 1) / cols);
+          const col = (i - 1) % cols;
+          const x = startX + col * (boxSize + margin);
+          const y = startY + row * (boxSize + margin);
+
+          // Color según estado
+          if (isVendido(i)) {
+            ctx.fillStyle = '#e74c3c';
+          } else {
+            ctx.fillStyle = '#2ecc71';
+          }
+          
+          // Sombra
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetY = 4;
+          
+          // Dibujar rectángulo
+          roundRect(ctx, x, y, boxSize, boxSize, 12);
+          
+          // Quitar sombra para texto
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
+          
+          // Número
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 22px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(i.toString(), x + boxSize/2, y + boxSize/2);
+        }
+
+        // Leyenda
+        const legendY = startY + (10 * (boxSize + margin)) + 40;
+        
+        // Disponible
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#2ecc71';
+        roundRect(ctx, 200, legendY, 40, 40, 8);
+        ctx.fillStyle = 'white';
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText('Disponible', 260, legendY + 25);
+        
+        // Vendido
+        ctx.fillStyle = '#e74c3c';
+        roundRect(ctx, 500, legendY, 40, 40, 8);
+        ctx.fillStyle = 'white';
+        ctx.fillText('Vendido', 560, legendY + 25);
+
+        // Total
+        ctx.font = 'bold 28px Arial';
+        ctx.fillStyle = 'gold';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Total: ${vendidos} vendidos · ${disponibles} disponibles`, canvas.width/2, legendY + 100);
+
+        // Fecha de generación
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#888';
+        ctx.fillText('Generado el ' + new Date().toLocaleDateString(), canvas.width/2, legendY + 150);
+
+        return new Promise((resolve) => {
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/png');
+        });
+      } catch (error) {
+        console.error('Error:', error);
+        throw error;
+      } finally {
+        loadingOverlay.classList.remove('active');
+      }
+    }
+
+    // Función para compartir en WhatsApp
+    async function compartirWhatsAppImagen() {
+      try {
+        const imagenBlob = await generarImagenRifa();
+        const file = new File([imagenBlob], 'rifa-estado.png', { type: 'image/png' });
+        
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: CONFIG.titulo,
+            text: `🔊 ${CONFIG.titulo}\n📊 ${getVendidosCount()} de ${CONFIG.totalNumbers} números vendidos`,
+            files: [file]
+          });
+        } else {
+          const url = URL.createObjectURL(imagenBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'rifa-estado.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+            const mensaje = encodeURIComponent('🔊 ' + CONFIG.titulo + ' - ' + getVendidosCount() + ' números vendidos');
+            window.open('https://wa.me/?text=' + mensaje, '_blank');
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error al generar la imagen. Intenta de nuevo.');
+      }
+    }
+
+    // Renderizar UI
+    function renderUI() {
+      const overlay = document.getElementById('mainOverlay');
+      const vendidosCount = getVendidosCount();
+      
+      if (adminMode) {
+        document.body.classList.add('admin-active');
+      } else {
+        document.body.classList.remove('admin-active');
+      }
+
+      let html = `
+        <div class="rifa-header">
+          <div class="rifa-titulo">🔊 ${CONFIG.titulo}</div>
+          <div class="rifa-desc">
+            <span>${CONFIG.descripcionCorta}</span>
+            <span class="badge-precio"><i class="fas fa-tag"></i> ${CONFIG.precio}</span>
+            <span class="badge-fecha"><i class="far fa-calendar-alt"></i> ${CONFIG.fechaLimite}</span>
+          </div>
+        </div>
+
+        <div class="contador-vendidos">
+          <span class="contador-label"><i class="fas fa-ticket-alt"></i> VENDIDOS</span>
+          <span class="contador-numero">${vendidosCount} / ${CONFIG.totalNumbers}</span>
+        </div>
+      `;
+
+      if (!adminMode) {
+        html += `
+          <div class="pin-modal">
+            <form id="pinForm" style="display: flex; gap: 8px;">
+              <input type="password" id="pinInput" placeholder="clave admin" style="flex:2; background:#1e1e2e; border-radius:60px; border:1px solid gold; padding:14px; color:white;" />
+              <button type="submit" class="btn" style="flex:1; background:gold;">Entrar</button>
+            </form>
+            <div class="text-small"><i class="fas fa-lock"></i> modo solo ver disponible</div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div style="background:goldenrod; padding:12px; border-radius:60px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; color:black; font-weight:bold;">
+            <span><i class="fas fa-crown"></i> ADMIN ACTIVO</span>
+            <button id="salirAdminBtn" class="btn-outline" style="background:black; color:white; border:none; padding:8px 18px; border-radius:40px;">Salir</button>
+          </div>
+        `;
+      }
+
+      html += `<div class="numeros-grid" id="numerosGrid">`;
+      for (let i = 1; i <= CONFIG.totalNumbers; i++) {
+        const vendido = isVendido(i);
+        const estadoClass = vendido ? 'vendido' : 'disponible';
+        html += `<div class="numero-item ${estadoClass}" data-numero="${i}">${i}</div>`;
+      }
+      html += `</div>`;
+
+      if (adminMode && numeros.length > 0) {
+        html += `<div class="admin-panel"><h3><i class="fas fa-users"></i> Compradores (${numeros.length})</h3>`;
+        numeros.sort((a, b) => a.numero - b.numero).forEach(venta => {
+          html += `
+            <div class="venta-item">
+              <div class="venta-info">
+                <span class="venta-numero">#${venta.numero}</span>
+                <div class="venta-detalle">
+                  <i class="fas fa-user"></i> ${venta.nombre || 'Sin nombre'}<br>
+                  <i class="fas fa-phone"></i> ${venta.telefono}<br>
+                  <i class="fas fa-comment"></i> ${venta.nota || 'Sin nota'}
+                </div>
+              </div>
+              <div class="venta-acciones">
+                <button class="btn-editar" onclick="editarVentaClick(${venta.numero})"><i class="fas fa-edit"></i></button>
+                <button class="btn-eliminar" onclick="eliminarVentaClick(${venta.numero})"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+
+      html += `
+        <div class="btn-flotante-share">
+          <button class="btn-share-main" id="shareMainBtn"><i class="fab fa-whatsapp"></i> Compartir</button>
+        </div>
+        <div id="shareOptions" style="display: none;" class="sub-opciones">
+          <button id="shareRedesBtn"><i class="fab fa-facebook"></i> Texto</button>
+          <button id="shareWhatsAppImgBtn"><i class="fab fa-whatsapp"></i> Imagen 📸</button>
+          <button id="shareWhatsAppTodosBtn"><i class="fab fa-whatsapp"></i> Mensaje</button>
+        </div>
+      `;
+
+      if (adminMode) {
+        html += `<div id="modalVenta" style="display: none;" class="modal-vender"></div>`;
+        html += `<div id="modalEditar" style="display: none;" class="modal-editar"></div>`;
+      }
+
+      html += `<hr><footer>PWA Rifa · toca números (admin) para vender</footer>`;
+      overlay.innerHTML = html;
+
+      // Event listeners
+      if (!adminMode) {
+        const pinForm = document.getElementById('pinForm');
+        if (pinForm) {
+          pinForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pin = document.getElementById('pinInput').value;
+            if (pin === CONFIG.adminPassword) {
+              adminMode = true;
+              renderUI();
+            } else {
+              alert('Clave incorrecta');
+            }
+          });
+        }
+      } else {
+        document.getElementById('salirAdminBtn')?.addEventListener('click', () => {
+          adminMode = false;
+          renderUI();
+        });
+
+        document.querySelectorAll('.numero-item.disponible').forEach(item => {
+          item.addEventListener('click', (e) => {
+            const numero = parseInt(e.currentTarget.dataset.numero);
+            mostrarFormularioVenta(numero);
+          });
+        });
+
+        document.querySelectorAll('.numero-item.vendido').forEach(item => {
+          item.addEventListener('click', (e) => {
+            const numero = parseInt(e.currentTarget.dataset.numero);
+            const venta = getVentaByNumero(numero);
+            if (venta) {
+              alert(`🎫 Número: ${venta.numero}\n👤 ${venta.nombre}\n📞 ${venta.telefono}\n📝 ${venta.nota}`);
+            }
+          });
+        });
+      }
+
+      document.getElementById('shareMainBtn')?.addEventListener('click', () => {
+        const opt = document.getElementById('shareOptions');
+        opt.style.display = opt.style.display === 'none' ? 'flex' : 'none';
+      });
+
+      document.getElementById('shareRedesBtn')?.addEventListener('click', () => {
+        const mensaje = encodeURIComponent(`🔊 ${CONFIG.titulo}\n📊 ${getVendidosCount()} de ${CONFIG.totalNumbers} vendidos\n💰 ${CONFIG.precio}`);
+        window.open(`https://twitter.com/intent/tweet?text=${mensaje}`, '_blank');
+        document.getElementById('shareOptions').style.display = 'none';
+      });
+
+      document.getElementById('shareWhatsAppImgBtn')?.addEventListener('click', async () => {
+        document.getElementById('shareOptions').style.display = 'none';
+        await compartirWhatsAppImagen();
+      });
+
+      document.getElementById('shareWhatsAppTodosBtn')?.addEventListener('click', () => {
+        const telefonos = numeros.map(item => item.telefono).filter(t => t);
+        if (telefonos.length === 0) {
+          alert('No hay teléfonos');
+          return;
+        }
+        const msg = prompt('Mensaje:', '🔊 ¡Hola! Les recuerdo que la rifa se cierra pronto.');
+        if (msg) {
+          window.open(`https://wa.me/${telefonos[0].replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+          alert(`Chat con ${telefonos[0]}`);
+        }
+        document.getElementById('shareOptions').style.display = 'none';
+      });
+    }
+
+    // Funciones globales
+    window.eliminarVentaClick = function(numero) {
+      eliminarVenta(numero);
+    };
+
+    window.editarVentaClick = function(numero) {
+      const venta = getVentaByNumero(numero);
+      if (venta) mostrarFormularioEditar(venta);
+    };
+
+    function mostrarFormularioVenta(numero) {
+      const modal = document.getElementById('modalVenta');
+      modal.style.display = 'block';
+      modal.innerHTML = `
+        <h3>Vender número ${numero}</h3>
+        <input type="text" id="venderNombre" placeholder="Nombre" />
+        <input type="tel" id="venderTelefono" placeholder="Teléfono" required />
+        <textarea id="venderNota" placeholder="Nota"></textarea>
+        <div class="btn-group">
+          <button class="btn" id="confirmarVentaBtn">Vender</button>
+          <button class="btn-outline" id="cancelarVentaBtn">Cancelar</button>
+        </div>
+      `;
+
+      document.getElementById('cancelarVentaBtn').onclick = () => modal.style.display = 'none';
+      document.getElementById('confirmarVentaBtn').onclick = () => {
+        const tel = document.getElementById('venderTelefono').value.trim();
+        if (!tel) { alert('Teléfono requerido'); return; }
+        numeros.push({
+          numero: numero,
+          nombre: document.getElementById('venderNombre').value.trim() || 'Sin nombre',
+          telefono: tel,
+          nota: document.getElementById('venderNota').value.trim(),
+          fecha: new Date().toISOString()
+        });
+        saveToStorage();
+        modal.style.display = 'none';
+        renderUI();
+      };
+    }
+
+    function mostrarFormularioEditar(venta) {
+      const modal = document.getElementById('modalEditar');
+      modal.style.display = 'block';
+      modal.innerHTML = `
+        <h3>Editar número ${venta.numero}</h3>
+        <input type="text" id="editarNombre" value="${venta.nombre || ''}" />
+        <input type="tel" id="editarTelefono" value="${venta.telefono || ''}" />
+        <textarea id="editarNota">${venta.nota || ''}</textarea>
+        <div class="btn-group">
+          <button class="btn" id="guardarEdicionBtn">Guardar</button>
+          <button class="btn-outline" id="cancelarEdicionBtn">Cancelar</button>
+        </div>
+      `;
+
+      document.getElementById('cancelarEdicionBtn').onclick = () => modal.style.display = 'none';
+      document.getElementById('guardarEdicionBtn').onclick = () => {
+        const tel = document.getElementById('editarTelefono').value.trim();
+        if (!tel) { alert('Teléfono requerido'); return; }
+        editarVenta(venta.numero, {
+          nombre: document.getElementById('editarNombre').value.trim(),
+          telefono: tel,
+          nota: document.getElementById('editarNota').value.trim()
+        });
+        modal.style.display = 'none';
+      };
+    }
+
+    // Inicializar
+    document.getElementById('appContainer').style.setProperty('--bg-image', `url('${CONFIG.bgImage}')`);
+    renderUI();
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`
+        self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+        self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+        self.addEventListener('fetch', e => e.respondWith(fetch(e.request)));
+      `)).catch(() => {});
+    }
+  })();
+</script>
+</body>
+</html>
